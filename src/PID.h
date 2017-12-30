@@ -9,13 +9,21 @@ public:
   double p_error;
   double i_error;
   double d_error;
+  double cte_prev;
 
+  // Windup indicators
+  bool isWoundUpHigh;
+  bool isWoundUpLow;
+
+  // debug
+  bool shouldDebug;
+  
   /*
   * Coefficients
-  */ 
-  double Kp;
-  double Ki;
-  double Kd;
+  * Change these to an array to work better with Twiddle algorithm
+  */
+
+  double gains[3] = {0.0, 0.0, 0.0};
 
   /*
   * Constructor
