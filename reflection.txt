@@ -1,0 +1,20 @@
+Reflection
+
+- Describe the effect each of the P, I, D components had in your implementation
+
+For a PID controller, each part of the equation has a slightly different effect.
+
+The proportional (P) portion of the controller changes the acutator to force the measured value to stay close to its setpoint. In this case, the controller actuated the steering angle to maintain a cross track error (CTE) of 0. The value sent to the actuator for the proportional part of the error is simply the proportional gain multiplied by the cross track error. At CTE = 0, the P action of the PID controller will output a steering angle of 0. CTE relative to steering angle is an integrating process, so P action alone will introduce overshoot and a marginally stable closed loop system. For a straight line path, a marginally stable system would manifest itself as the car weaving a constant amount to the left and right of the desired path.
+
+The derivative (D) portion of the controller changes the actuator in response to *changes* in the measured value. In our case, if the CTE increases, the derivative action will result in a negative steering angle. In contrast to P action, D action will give a negative output even if the increase is from a negative value to a less negative value. P action would result in smaller, but still positive output in such a case. In our case of an integrating process, the D action of the controller works in concert with the P action such that the sum of their outputs changes sign before the cross track error reaches zero. This enables the controller to get the car's heading to align better with the desired path as CTE approaches zero.
+
+The integral (I) portion of the controller changes the actuator in response to the *sum* of all past errors. Integral action isn't necessary for offset free control of an integrating process unless there is some kind of integrating disturbance affecting the process. In our case, this would be drift in the steering angle. Drift manifests as an offset between actual steering angle and requested steering angle. For example, if we request a steering angle of 0, but due to misalignment the actual angle is 0.1, the car would tend to stay to one side of the target path despite the efforts of our controller to correct it. Drivers will recognize the effect as a constant "pull" to one side or another. To offset this drift, we add a (very small) amount of integral action.
+
+- Describe how the final hyperparamters were chosen.
+
+
+To choose the hyperparameters, I first used a constant throttle value of 0.2 and the Twiddle algorithm from class with delta K values of 0.025. For each set of paramters, I ran the simulator for 2000 iterations and computed the squared CTE to use as the adjustment criterion. Note that 2000 iterations at a throttle of 0.2 is enough to get through the first curve. I ended up with values Kp = 0.0797553, Ki = 0, Kd = 0.152628, which successfully navigated the course at the low throttle value.
+
+However, as I increased the throttle value, the initial parameters didn't work. So, I repeated this procedure for different throttle values (0.4, 0.6. 1.0), using what I had learned from lower throttle values as a seed for the higher values. As the throttle values increased, I noticed that the performance of a set of parameters became very sensitive. Sometimes a set of parameters would successfully complete the course, while other times the same parameters would fail catastrophically.
+
+To combat this, I set up a constraint controller to control the the absolute value of the CTE by reducing the throttle. This controller is only useful in concert with the PID controller that controls CTE with steering angle. When the absolute value of the CTE is below the setpoint (in this case 1.5), the controller will increase the throttle. When the absolute value of the CTE exceeds the setpoint, it will reduce the throttle. In this way, we can crudely approximate breaking behavior in corners similar to something a human might do when starting to run off the track.
